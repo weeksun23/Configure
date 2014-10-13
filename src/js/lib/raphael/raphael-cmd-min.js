@@ -1,4 +1,4 @@
-define('lib/raphael/raphael-cmd-min',[],function(){
+define(function(){
 var define;
 // ┌────────────────────────────────────────────────────────────────────┐ \\
 // │ Raphaël 2.1.2 - JavaScript Vector Library                          │ \\

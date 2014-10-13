@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+    <link rel="stylesheet" type="text/css" href="demo.css">
+	<script src="../src/js/lib/avalon/avalon.js"></script>
+</head>
+<body ms-controller='configure'>
+    <div class='west'>
+        <div ms-repeat="panelData">
+            <div class='panel-title'>{{el.title}}</div>
+            <div class='panel-content clearfix' ms-data-type='el.type'>
+                <div class='fl item' ms-repeat-img="el.data" 
+                    ms-mousedown="$beforeMove($event,img)"
+                    data-repeat-rendered='rendered' ms-data-img='img'>
+                    <img ms-if='img.src' ms-src='../src/css/configure/modules/{{img.src}}' 
+                        ms-css-width='img.width' ms-css-height='img.height' 
+                        ms-data-type-val='img.typeVal'/>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class='center'>
+        <div id='paper' ></div>
+    </div>
+    <div class='proxy' ms-visible='proxy.show' ms-css-left='proxy.left' ms-css-top='proxy.top'>
+        <img ms-if='proxy.src' ms-src='../src/css/configure/modules/{{proxy.src}}' 
+            ms-css-width='proxy.width' ms-css-height='proxy.height' 
+            ms-data-type-val='proxy.typeVal'/>
+    </div>
+    <script>
+        function getItem(name){
+            return {
+                $name : name,
+                src : null,
+                width : null,
+                height : null,
+                typeVal : null
+            };
+        }
+        require(["../raphael/raphael-cmd-min.js","../../configure.imglib.js"],function(Raphael,Imglib){
+            var vmodel = avalon.define("configure",function(vm){
+                vm.panelData = [{
+                    title : "连线",
+                    type : "line",
+                    data : [getItem("double"),getItem("dotted"),getItem("solid")]
+                }];
+                vm.proxy = {
+                    show : false,
+                    src : null,
+                    width : null,
+                    height : null,
+                    left : null,
+                    top : null,
+                    typeVal : null
+                };
+                vm.rendered = function(action,i,arr){
+                    if(action === 'add'){
+                        avalon.each(arr,function(i,img){
+                            var target = Imglib[img.$name];
+                            img.src = target.src;
+                            img.width = target.w;
+                            img.height = target.h;
+                            img.typeVal = target.typeVal;
+                        });
+                    }
+                };
+                vm.$beforeMove = function(e,img){
+                    e.preventDefault();
+                    var offset = avalon(this).offset();
+                    var sX = e.pageX;
+                    var sY = e.pageY;
+                    var sL = offset.left;
+                    var sT = offset.top;
+                    avalon.mix(vmodel.proxy,{
+                        show : true,
+                        left : sL,
+                        top : sT,
+                        src : img.src,
+                        width : img.width,
+                        height : img.height,
+                        typeVal : img.typeVal
+                    });
+                    var move = avalon.bind(document,"mousemove",function(moveE){
+                        vmodel.proxy.left = sL + (moveE.pageX - sX);
+                        vmodel.proxy.top = sT + (moveE.pageY - sY);
+                    });
+                    var up = avalon.bind(document,"mouseup",function(upE){
+                        if(upE.pageX > 200){
+
+                        }else{
+                            vmodel.proxy.show = false;
+                        }
+                        avalon.unbind(document,"mouseup",up);
+                        avalon.unbind(document,"mousemove",move);
+                    });
+                };
+            });
+            avalon.scan();
+        });
+    </script>
+</body>
+</html>

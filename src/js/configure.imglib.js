@@ -1,6 +1,28 @@
-define(function(require, exports, module) {
+define(function() {
 	"use strict";
-	module.exports = {
+	return {
+		"double" : {
+			"w" : 165,
+			"h" : 13,
+			"src" : "line/double.png",
+			"typeVal" : "double"
+		},
+		"dotted" : {
+			"w" : 165,
+			"h" : 13,
+			"src" : "line/dotted.png",
+			"typeVal" : "dotted"
+		},
+		"solid" : {
+			"w" : 165,
+			"h" : 13,
+			"src" : "line/solid.png",
+			"typeVal" : "solid"
+		},
+
+
+
+		
 		"plc" : {
 			"w" : 62,
 			"h" : 70,
@@ -55,40 +77,6 @@ define(function(require, exports, module) {
 			"h" : 117,
 			"src" : "device/pool.png",
 			"points" : "[[0.1,0.75],[0.95,0.6]]"
-		},
-		"dottedpipe" : {
-			"w" : 165,
-			"h" : 16,
-			"src" : "line/dottedpipe.png",
-			"typeVal" : "dottedpipe",
-			"color" : "blue"
-		},
-		"dottedpipe-red" : {
-			"w" : 165,
-			"h" : 16,
-			"src" : "line/dottedpipe-red.png",
-			"typeVal" : "dottedpipe",
-			"color" : "red"
-		},
-		"pipe1" : {
-			"w" : 165,
-			"h" : 16,
-			"src" : "line/pipe1.png",
-			"typeVal" : "pipe"
-		},
-		"pipe2" : {
-			"w" : 165,
-			"h" : 16,
-			"src" : "line/pipe2.png",
-			"typeVal" : "pipe",
-			"dash" : "- "
-		},
-		"pipe3" : {
-			"w" : 165,
-			"h" : 16,
-			"src" : "line/pipe3.png",
-			"typeVal" : "pipe",
-			"dash" : "-"
 		},
 		"left-bottom" : {
 			"w" : 32,
