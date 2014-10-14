@@ -5,7 +5,7 @@ p,body{margin:0;padding: 0;}
 .clearfix{*zoom:1;}
 .clearfix:after {visibility: hidden;display: block;font-size: 0;content: " ";clear: both;height: 0;}
 
-.west{position: absolute;top: 0;left:0;bottom: 0;width: 199px;border-right: 1px solid #d2d2d2}
+.west{position: absolute;top: 0;left:0;bottom: 0;width: 199px;border-right: 1px solid #d2d2d2;overflow: auto;}
 
 .panel-title{padding: 5px;font-size: 16px;background-color: #e2e2e2;cursor: pointer;border-bottom: 1px solid #d2d2d2}
 .panel-content{border-bottom: 1px solid #d2d2d2;padding-bottom: 5px;}
@@ -13,6 +13,6 @@ p,body{margin:0;padding: 0;}
 .item{float: left;cursor: move;margin:5px 0 0 5px;}
 .item:hover{opacity: 0.6;filter:alpha(opacity=60);}
 
-.proxy{position: absolute;z-index: 10;display: none;cursor: move;}
+.proxy{position: absolute;z-index: 10;display: none;}
 
 .center{position: absolute;top: 0;left: 200px;bottom: 0;right: 0;overflow: auto;}

@@ -1,4 +1,4 @@
-define(function(require,exports,module){
+define(function(){
 	"use strict";
 	//储存所有连接关系
 	var Connection = {
@@ -322,7 +322,7 @@ define(function(require,exports,module){
 			this.remove();
 		});
 	}
-	module.exports = function(Configure){
+	return function(Configure){
 		Configure.connect = {
 			remove : function(id){
 				Connection.remove(id);

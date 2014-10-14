@@ -19,65 +19,6 @@ define(function() {
 			"src" : "line/solid.png",
 			"typeVal" : "solid"
 		},
-
-
-
-		
-		"plc" : {
-			"w" : 62,
-			"h" : 70,
-			"src" : "device/plc.png",
-			"typeVal" : "plc"
-		},
-		"climate" : {
-			"w" : 76,
-			"h" : 70,
-			"src" : "device/climate.png",
-			"typeVal" : "climate"
-		},
-		"change" : {
-			"w" : 106,
-			"h" : 70,
-			"src" : "device/change.png",
-			"typeVal" : "conversion"
-		},
-		"control-left-right1" : {
-			"w" : 33,
-			"h" : 50,
-			"src" : "connector/control-left-right1.png",
-			"points" : "[[0,0.75],[1,0.75]]"
-		},
-		"bottle" : {
-			"w" : 160,
-			"h" : 75,
-			"src" : "device/bottle.png",
-			"points" : "[[0,0.4],[0.25,0],[0.75,0],[0.5,0]]"
-		},
-		"redbottle" : {
-			"w" : 160,
-			"h" : 75,
-			"src" : "device/redbottle.png",
-			"points" : "[[0,0.4],[0.25,0],[0.75,0],[0.5,0]]"
-		},
-		"jiazi" : {
-			"w" : 100,
-			"h" : 200,
-			"src" : "device/jiazi.png",
-			"points" : "[[0.1,0.25],[0.8,0.25]]"
-		},
-		"boiler" : {
-			"w" : 160,
-			"h" : 100,
-			"src" : "device/boiler.png",
-			"points" : "[[0,0.5],[1,0.5]]",
-			typeVal : 'boiler'
-		},
-		"pool" : {
-			"w" : 165,
-			"h" : 117,
-			"src" : "device/pool.png",
-			"points" : "[[0.1,0.75],[0.95,0.6]]"
-		},
 		"left-bottom" : {
 			"w" : 32,
 			"h" : 33,
@@ -210,6 +151,62 @@ define(function() {
 			"src" : "connector/yan.png",
 			"points" : "[[0.5,1]]"
 		},
+		"plc" : {
+			"w" : 62,
+			"h" : 70,
+			"src" : "device/plc.png",
+			"typeVal" : "plc"
+		},
+		"climate" : {
+			"w" : 76,
+			"h" : 70,
+			"src" : "device/climate.png",
+			"typeVal" : "climate"
+		},
+		"change" : {
+			"w" : 106,
+			"h" : 70,
+			"src" : "device/change.png",
+			"typeVal" : "conversion"
+		},
+		"control-left-right1" : {
+			"w" : 33,
+			"h" : 50,
+			"src" : "connector/control-left-right1.png",
+			"points" : "[[0,0.75],[1,0.75]]"
+		},
+		"bottle" : {
+			"w" : 160,
+			"h" : 75,
+			"src" : "device/bottle.png",
+			"points" : "[[0,0.4],[0.25,0],[0.75,0],[0.5,0]]"
+		},
+		"redbottle" : {
+			"w" : 160,
+			"h" : 75,
+			"src" : "device/redbottle.png",
+			"points" : "[[0,0.4],[0.25,0],[0.75,0],[0.5,0]]"
+		},
+		"jiazi" : {
+			"w" : 100,
+			"h" : 200,
+			"src" : "device/jiazi.png",
+			"points" : "[[0.1,0.25],[0.8,0.25]]"
+		},
+		"boiler" : {
+			"w" : 160,
+			"h" : 100,
+			"src" : "device/boiler.png",
+			"points" : "[[0,0.5],[1,0.5]]",
+			typeVal : 'boiler'
+		},
+		"pool" : {
+			"w" : 165,
+			"h" : 117,
+			"src" : "device/pool.png",
+			"points" : "[[0.1,0.75],[0.95,0.6]]"
+		},
+		
 		"sensor-panel-simple" : {
 			w : 36,
 			h : 24,
