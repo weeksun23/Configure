@@ -1,9 +1,9 @@
 define(["./configure","./connect"],function(Configure,ConnInit){
 	"use strict";
 	var Connect = ConnInit(Configure);
+	var Bind = Configure.bind;
 	//编辑模式
 	Configure.edit = true;
-	var fn = Configure.$.prototype;
 	(function(){
 		function edage(x,y,bbox){
 			var maxX = Configure.paperW;
@@ -156,10 +156,9 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 				});
 			}
 		};
-		fn.drag = function(){
-			var el = this.el;
+		Bind.drag = function(el){
 			dragFunc[el.type].call(el,el.paper);
-			return this;
+			return Bind;
 		};
 	})();
 	(function(){
@@ -195,10 +194,13 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 								ep = this.getPointAtLength(this.getTotalLength());
 							var newSet = paper.set();
 							var id = this.id;
-							var init = Configure.core.circle.init;
 							newSet.push(
-								init.call(paper,"pathCircle",sp.x,sp.y,id,0,"#d2d2d2"),
-								init.call(paper,"pathCircle",ep.x,ep.y,id,1,"#d2d2d2")
+								paper.configure("circle","pathCircle",[sp.x,sp.y],{
+									id : id,position : 0,bgColor : "#d2d2d2"
+								}),
+								paper.configure("circle","pathCircle",[ep.x,ep.y],{
+									id : id,position : 1,bgColor : "#d2d2d2"
+								})
 							);
 							this.data("circleSet",newSet);
 						}else{
@@ -209,63 +211,85 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 				});
 			},
 			image : function(){
-
+				
 			}
 		};
-		fn.click = function(){
-			var el = this.el;
+		Bind.click = function(el){
 			clickFunc[el.type].call(el,el.paper);
-			return this;
+			return Bind;
 		};
 	})();
 	Configure.extend("line",{
-		beforeInit : function(typeVal,x,y){
-			var obj = Configure.getDefaultAttr("line");
+		beforeInit : function(initParams,attrParams){
+			var x = initParams[0];
 			if(typeof x == 'number'){
-				return [["M",x," ",y,"L",x + obj.len," ",y].join(""),obj.attr];
+				var y = initParams[1];
+				return [["M",x," ",y,"L",x + attrParams._len," ",y].join("")];
 			}else{
-				return [x,y || {}];
+				return [x];
 			}
 		},
-		afterInit : function(el){
-			Configure.$(el).click().rightClick(function(){
+		afterInit : function(el,attrParams){
+			el.attr(attrParams._attr);
+			Bind.click(el).drag(el);
+			Configure.$(el).rightClick(function(){
 				alert("line");
-			}).drag();
+			});
 		}
-	});
-	Configure.extend("circle",{
+	}).extend("circle",{
 		defaultAttr : {
-			stroke : "green",
-			fill : "#66ff33",
-			size : 5
+			_stroke : "green",
+			_fill : "#66ff33",
+			_size : 5
 		},
-		init : function(typeVal,x,y,id,position,bgColor){
-			var defaultAttr = Configure.getDefaultAttr("circle");
-			var circle = this.circle(x,y,defaultAttr.size);
-			if(position !== undefined){
-				var cursor = ["nw-resize","ne-resize","sw-resize","se-resize"][position];
+		beforeInit : function(initParams,attrParams){
+			return initParams.concat(attrParams._size);
+		},
+		init : function(x,y,r){
+			return this.circle(x,y,r);
+		},
+		afterInit : function(circle,attrParams){
+			if(attrParams.position !== undefined){
+				var cursor = ["nw-resize","ne-resize","sw-resize","se-resize"][attrParams.position];
 			}else{
 				cursor = "nw-resize";
 			}
-			var $circle = Configure.$(circle);
-			if(typeVal === "pathCircle"){
-				$circle.rightClick(function(){
-					alert("circle");
+			circle.attr({stroke : attrParams._stroke,fill : attrParams.bgColor || attrParams._fill,cursor : cursor})
+				.data("belong",{id : attrParams.id,position : attrParams.position})
+				.toFront();
+			Bind.drag(circle);
+		},
+		pathCircle : function(circle){
+			Configure.$(circle).rightClick(function(){
+				alert("circle");
+			});
+		}
+	});
+	(function(){
+		function getPoints(str){
+			if(!str) return null;
+			var arr = [];
+			var points = JSON.parse(str);
+			for(var i=0,ii=points.length;i<ii;i++){
+				arr.push({
+					x : points[i][0],
+					y : points[i][1]
 				});
 			}
-			$circle.drag();
-			return circle.attr({stroke : defaultAttr.stroke,fill : bgColor || defaultAttr.fill,cursor : cursor})
-				.data("belong",{id : id,position : position})
-				.toFront();
+			return arr;
 		}
-	});
-	Configure.extend("connector",{
-		afterInit : function(connector){
-			Configure.$(connector).rightClick(function(){
-				alert("connector");
-			}).drag();
-		}
-	});
+		Configure.extend("connector",{
+			afterInit : function(connector,attrParams){
+				var points = attrParams.points;
+				connector.data("connectPoints",typeof points == 'object' 
+					? points : getPoints(points));
+				Bind.drag(connector);
+				Configure.$(connector).rightClick(function(){
+					alert("connector");
+				});
+			}
+		});
+	})();
 	//扩展set
 	(function(Raphael){
 		Raphael.st.method = function(method){

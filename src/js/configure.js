@@ -3,19 +3,16 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 	/********************************paper**************************************/
 	function Configure(paperId,w,h){
 		this.paper = new Raphael(paperId,this.paperW = (w || 7500),this.paperH = (h || 7500));
-		this.paper.configure = this;
 	}
 	Configure.raphael = Raphael;
 	Configure.version = "1.0";
-	Configure.prototype.add = function(type){
-		var arg = Array.prototype.slice.call(arguments,1);
-		return core[type].init.apply(this.paper,arg);
-	};
 	/********************************帮助函数**************************************/
 	//空函数
 	var noop = Configure.noop = function(){};
 	//简单扩展
 	var mix = Configure.mix = function(a,b){
+		a = a || {};
+		b = b || {};
 		for(var i in b){
 			if(b[i] !== undefined){
 				a[i] = b[i];
@@ -23,6 +20,8 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 		}
 		return a;
 	};
+	//静态绑定
+	Configure.bind = {};
 	/********************************element**************************************/
 	(function(){
 		var $func = Configure.$ = function(element){
@@ -52,75 +51,80 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 	})();
 	/********************************core**************************************/
 	var core = Configure.core = {};
+	Raphael.fn.configure = function(type,typeVal,initParams,attrParams){
+		return core[type].call(this,typeVal,initParams,attrParams);
+	};
 	/*
 	扩展core
+	每个属性都是一个方法，this指向当前paper,执行顺序为beforeInit > init > [typeVal]init > afterInit
+	beforeInit主要对传入参数进行处理若返回值为数组，则作为init的参数
+	init接收Raphael对象初始化所需参数，并进行初始化，返回Raphael对象
+		Paper.path([pathString])
+		Paper.image(src, x, y, width, height)
+		Paper.circle(x, y, r)
+		Paper.rect(x, y, width, height, [r])
+	[typeVal]init 根据typeVal进行初始化
+
+	exec(typeVal,initParams,attrParams)
+	typeVal 必须为字符串
+	initParams 必须为数组
+	attrParams 必须为对象
 	*/
 	var extend = Configure.extend = function(name,options){
-		if(core[name]){
-			mix(core[name],options);
+		var exec = core[name];
+		if(exec){
+			mix(exec.options,options);
 		}else{
 			options = mix({
+				//defaultAttr中的属性值约定以_开头
 				defaultAttr : {},
-				init : noop,
 				beforeInit : noop,
+				init : noop,
 				afterInit : noop
 			},options);
-			var _init = options.init;
-			//init函数的第一个参数必须为typeVal,且必须返回Raphael对象
-			//this指向当前paper
-			options.init = function(typeVal){
-				var result = options.beforeInit.apply(this,arguments);
-				//采用beforeInit的返回值为参数列表,若没返回则采用arguments
-				var el = _init.apply(this,result || arguments);
-				el.data({
-					type : name,
-					typeVal : typeVal
-				});
-				var newArg = [el].concat(Array.prototype.slice.call(arguments));
-				options[typeVal] && options[typeVal].apply(this,newArg);
-				options.afterInit.apply(this,newArg);
+			exec = core[name] = function(typeVal,initParams,attrParams){
+				var target = exec.options;
+				attrParams = attrParams || {};
+				mix(attrParams,target.defaultAttr);
+				var newParams = target.beforeInit.call(this,initParams,attrParams);
+				var el = target.init.apply(this,newParams || initParams);
+				if(el){
+					el.data({
+						type : name,
+						typeVal : typeVal
+					});
+				}
+				target[typeVal] && target[typeVal].call(this,el,attrParams);
+				target.afterInit.call(this,el,attrParams);
 				return el;
 			};
-			core[name] = options;
+			exec.options = options;
 		}
-		return core[name];
+		return Configure;
 	};
 	Configure.getDefaultAttr = function(name){
-		return core[name].defaultAttr;
+		return core[name].options.defaultAttr;
 	};
 	extend("line",{
 		defaultAttr : {
-			len : 150,
-			attr : {
+			_len : 150,
+			_attr : {
 				"stroke" : "#888",
 				"stroke-width" : 5,
 				"stroke-linecap" : "round",
 				"cursor" : "pointer"
 			}
 		},
-		init : function(str,attr){
-			return this.path(str).attr(attr);
+		init : function(str){
+			return this.path(str);
 		},
 		dotted : function(path){
 			path.attr("stroke-dasharray","- ");
 		}
 	});
-	function getPoints(str){
-		if(!str) return null;
-		var arr = [];
-		var points = JSON.parse(str);
-		for(var i=0,ii=points.length;i<ii;i++){
-			arr.push({
-				x : points[i][0],
-				y : points[i][1]
-			});
-		}
-		return arr;
-	}
 	extend("connector",{
-		init : function(typeVal,src,x,y,w,h,points){
-			return this.image(src,x,y,w,h).data("connectPoints",typeof points == 'object' 
-				? points : getPoints(points));
+		init : function(src,x,y,w,h){
+			return this.image(src,x,y,w,h);
 		}
 	});
 	return Configure;

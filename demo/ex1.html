@@ -109,10 +109,12 @@
                     var up = avalon.bind(document,"mouseup",function(upE){
                         if(upE.pageX > panelW){
                             if(type === "line"){
-                                configure.add(type,img.typeVal,proxy.left - panelW,proxy.top);
+                                configure.paper.configure(type,img.typeVal,[proxy.left - panelW,proxy.top]);
                             }else if(type === "connector"){
-                                configure.add(type,img.typeVal || "","../src/imglib/" + proxy.src,
-                                    proxy.left - panelW,proxy.top,proxy.width,proxy.height,img.$points);
+                                configure.paper.configure(type,img.typeVal,["../src/imglib/" + proxy.src,
+                                    proxy.left - panelW,proxy.top,proxy.width,proxy.height],{
+                                        points : img.$points
+                                    });
                             }
                         }
                         proxy.show = false;
