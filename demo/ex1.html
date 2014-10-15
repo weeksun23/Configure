@@ -51,6 +51,10 @@
                     title : "连接器",
                     type : "connector",
                     data : [getItem("left-bottom"),getItem("left-right"),getItem("left-top")]
+                },{
+                    title : "设备",
+                    type : "device",
+                    data : [getItem("plc"),getItem("climate"),getItem("change")]
                 }];
                 vm.curIndex = 0;
                 vm.proxy = {
@@ -109,9 +113,9 @@
                     var up = avalon.bind(document,"mouseup",function(upE){
                         if(upE.pageX > panelW){
                             if(type === "line"){
-                                configure.paper.configure(type,img.typeVal,[proxy.left - panelW,proxy.top]);
-                            }else if(type === "connector"){
-                                configure.paper.configure(type,img.typeVal,["../src/imglib/" + proxy.src,
+                                configure.add(type,img.typeVal,[proxy.left - panelW,proxy.top]);
+                            }else if(type === "connector" || type === "device"){
+                                configure.add(type,img.typeVal,["../src/imglib/" + proxy.src,
                                     proxy.left - panelW,proxy.top,proxy.width,proxy.height],{
                                         points : img.$points
                                     });

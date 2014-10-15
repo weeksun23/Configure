@@ -4,6 +4,9 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 	function Configure(paperId,w,h){
 		this.paper = new Raphael(paperId,this.paperW = (w || 7500),this.paperH = (h || 7500));
 	}
+	Configure.prototype.add = function(type,typeVal,initParams,attrParams){
+		return core[type].call(this,typeVal,initParams,attrParams);
+	};
 	Configure.raphael = Raphael;
 	Configure.version = "1.0";
 	/********************************帮助函数**************************************/
@@ -51,12 +54,9 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 	})();
 	/********************************core**************************************/
 	var core = Configure.core = {};
-	Raphael.fn.configure = function(type,typeVal,initParams,attrParams){
-		return core[type].call(this,typeVal,initParams,attrParams);
-	};
 	/*
 	扩展core
-	每个属性都是一个方法，this指向当前paper,执行顺序为beforeInit > init > [typeVal]init > afterInit
+	每个属性都是一个方法，this指向当前configure实例,执行顺序为beforeInit > init > [typeVal]init > afterInit
 	beforeInit主要对传入参数进行处理若返回值为数组，则作为init的参数
 	init接收Raphael对象初始化所需参数，并进行初始化，返回Raphael对象
 		Paper.path([pathString])
@@ -87,15 +87,16 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 				attrParams = attrParams || {};
 				mix(attrParams,target.defaultAttr);
 				var newParams = target.beforeInit.call(this,initParams,attrParams);
-				var el = target.init.apply(this,newParams || initParams);
+				//init的this指向paper
+				var el = target.init.apply(this.paper,newParams || initParams);
 				if(el){
 					el.data({
 						type : name,
 						typeVal : typeVal
 					});
 				}
-				target[typeVal] && target[typeVal].call(this,el,attrParams);
 				target.afterInit.call(this,el,attrParams);
+				target[typeVal] && target[typeVal].call(this,el,attrParams);
 				return el;
 			};
 			exec.options = options;
@@ -113,6 +114,16 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 				"stroke-width" : 5,
 				"stroke-linecap" : "round",
 				"cursor" : "pointer"
+			},
+			_outerAttr : {
+				"stroke" : "#d2d2d2",
+				"stroke-width" : 15,
+				"stroke-linecap" : "round",
+				"cursor" : "pointer"
+			},
+			_innerAttr : {
+				"stroke" : "blue",
+				"stroke-dasharray" : "-"
 			}
 		},
 		init : function(str){
@@ -122,10 +133,16 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 			path.attr("stroke-dasharray","- ");
 		}
 	});
-	extend("connector",{
-		init : function(src,x,y,w,h){
+	(function(){
+		function init(src,x,y,w,h){
 			return this.image(src,x,y,w,h);
 		}
-	});
+		extend("connector",{
+			init : init
+		});
+		extend("device",{
+			init : init
+		});
+	})();
 	return Configure;
 });

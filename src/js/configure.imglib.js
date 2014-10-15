@@ -1,6 +1,7 @@
 define(function() {
 	"use strict";
 	return {
+		/*****************************line*****************************/
 		"double" : {
 			"w" : 165,
 			"h" : 13,
@@ -19,6 +20,7 @@ define(function() {
 			"src" : "line/solid.png",
 			"typeVal" : "solid"
 		},
+		/*****************************connector*****************************/
 		"left-bottom" : {
 			"w" : 32,
 			"h" : 33,
@@ -151,23 +153,24 @@ define(function() {
 			"src" : "connector/yan.png",
 			"points" : "[[0.5,1]]"
 		},
+		/*****************************device*****************************/
 		"plc" : {
 			"w" : 62,
 			"h" : 70,
 			"src" : "device/plc.png",
-			"typeVal" : "plc"
+			"points" : "[[0,0.5],[0.5,1],[1,0.5],[0.5,0]]"
 		},
 		"climate" : {
 			"w" : 76,
 			"h" : 70,
 			"src" : "device/climate.png",
-			"typeVal" : "climate"
+			"points" : "[[0,0.5],[0.5,1],[1,0.5],[0.5,0]]"
 		},
 		"change" : {
 			"w" : 106,
 			"h" : 70,
 			"src" : "device/change.png",
-			"typeVal" : "conversion"
+			"points" : "[[0,0.5],[0.5,1],[1,0.5],[0.5,0]]"
 		},
 		"control-left-right1" : {
 			"w" : 33,

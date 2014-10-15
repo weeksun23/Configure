@@ -2,6 +2,30 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 	"use strict";
 	var Connect = ConnInit(Configure);
 	var Bind = Configure.bind;
+	Configure.mix(Configure.prototype,{
+		//当前选中的path
+		curPath : null,
+		//存放所有选择的img元素
+		clickEl : [],
+		//清空所有或特定选择的元素
+		clearChoose : function(target){
+			var clickEl = this.clickEl;
+			for(var i=0,ii=clickEl.length;i<ii;i++){
+				var el = clickEl[i];
+				if(target){
+					if(el.id === target.id){
+						el.data("circleSet").method("hide");
+						clickEl.splice(i,1);
+						return;
+					}
+				}else{
+					var circle = el.data("circleSet");
+					circle && circle.hide();
+				}
+			}
+			clickEl.length = 0;
+		}
+	});
 	//编辑模式
 	Configure.edit = true;
 	(function(){
@@ -25,7 +49,8 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			};
 		}
 		var dragFunc = {
-			path : function(paper){
+			path : function(configure){
+				var paper = configure.paper;
 				this.drag(function(dx,dy){
 					var arr = Configure.raphael.parsePathString(this.sPath);
 					var posArr = [];
@@ -44,8 +69,8 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 					if(other){
 						//平移带虚线的管道时 必须同时 移动另一条路径
 						other.attr("path",str);
-						if(this.data("type") === 'dottedPipe'){
-							//如果平移的是虚线 则要同时移动 管道两端的连线圆
+						if(!this.data("main")){
+							//同时移动虚线管道两端的连线圆
 							target = other;
 						}
 					}
@@ -67,7 +92,8 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 					});
 				});
 			},
-			image : function(paper){
+			image : function(configure){
+				var paper = configure.paper;
 				this.drag(function(dx,dy){
 					var type = this.data("type"),
 						x = this.sX + dx,
@@ -123,7 +149,8 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 					}
 				});
 			},
-			circle : function(paper){
+			circle : function(configure){
+				var paper = configure.paper;
 				this.drag(function(dx,dy){
 					var x = this.sX + dx,
 						y = this.sY + dy;
@@ -156,8 +183,8 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 				});
 			}
 		};
-		Bind.drag = function(el){
-			dragFunc[el.type].call(el,el.paper);
+		Bind.drag = function(el,configure){
+			dragFunc[el.type].call(el,configure);
 			return Bind;
 		};
 	})();
@@ -177,47 +204,88 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			}
 			return re;
 		}
+		function clickPath(configure){
+			var paper = configure.paper;
+			if(this.noSel) return;
+			var re = isSelected(this);
+			if(re){
+				re.method("hide");
+				configure.curPath = null;
+			}else{
+				//取消选中当前的path
+				configure.curPath && configure.curPath.data("circleSet").method("hide");
+				var set = this.data("circleSet");
+				if(!set){
+					var sp = this.getPointAtLength(0),
+						ep = this.getPointAtLength(this.getTotalLength());
+					var newSet = paper.set();
+					var id = this.id;
+					newSet.push(
+						configure.add("circle","pathCircle",[sp.x,sp.y],{
+							id : id,position : 0,bgColor : "#d2d2d2"
+						}),
+						configure.add("circle","pathCircle",[ep.x,ep.y],{
+							id : id,position : 1,bgColor : "#d2d2d2"
+						})
+					);
+					this.data("circleSet",newSet);
+				}else{
+					set.method("show");
+				}
+				configure.curPath = this;
+			}
+		}
 		var clickFunc = {
-			path : function(paper){
+			path : function(configure){
 				this.click(function(){
+					clickPath.call(this,configure);
+				});
+			},
+			image : function(configure){
+				this.click(function(){
+					var paper = configure.paper;
 					if(this.noSel) return;
+					//选择或取消选择el
+					//目前只支持单选
 					var re = isSelected(this);
 					if(re){
 						re.method("hide");
-						paper._curPath = null;
 					}else{
-						//取消选中当前的path
-						paper._curPath && paper._curPath.data("circleSet").method("hide");
+						configure.clearChoose();
 						var set = this.data("circleSet");
 						if(!set){
-							var sp = this.getPointAtLength(0),
-								ep = this.getPointAtLength(this.getTotalLength());
+							var bbox = this.getBBox();
 							var newSet = paper.set();
 							var id = this.id;
 							newSet.push(
-								paper.configure("circle","pathCircle",[sp.x,sp.y],{
-									id : id,position : 0,bgColor : "#d2d2d2"
+								configure.add("circle","imgCircle",[bbox.x,bbox.y],{
+									id : id,position : 0
 								}),
-								paper.configure("circle","pathCircle",[ep.x,ep.y],{
-									id : id,position : 1,bgColor : "#d2d2d2"
+								configure.add("circle","imgCircle",[bbox.x2,bbox.y],{
+									id : id,position : 1
+								}),
+								configure.add("circle","imgCircle",[bbox.x,bbox.y2],{
+									id : id,position : 2
+								}),
+								configure.add("circle","imgCircle",[bbox.x2,bbox.y2],{
+									id : id,position : 3
 								})
 							);
 							this.data("circleSet",newSet);
 						}else{
 							set.method("show");
 						}
-						paper._curPath = this;
+						//加入选中数组
+						configure.clickEl.push(this);
 					}
 				});
-			},
-			image : function(){
-				
 			}
 		};
-		Bind.click = function(el){
-			clickFunc[el.type].call(el,el.paper);
+		Bind.click = function(el,configure){
+			clickFunc[el.type].call(el,configure);
 			return Bind;
 		};
+		Bind.click.path = clickPath;
 	})();
 	Configure.extend("line",{
 		beforeInit : function(initParams,attrParams){
@@ -231,9 +299,24 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 		},
 		afterInit : function(el,attrParams){
 			el.attr(attrParams._attr);
-			Bind.click(el).drag(el);
+			Bind.click(el,this).drag(el,this);
 			Configure.$(el).rightClick(function(){
 				alert("line");
+			});
+		},
+		double : function(path,attrParams){
+			path.attr(attrParams._innerAttr);
+			var outerPath = this.paper.path(path.attr("path")).attr(attrParams._outerAttr);
+			outerPath.toFront().data("other",path);
+			path.toFront().data("other",outerPath).data("main",true);
+			var me = this;
+			//点击outerPath时触发path的点击事件
+			outerPath.click(function(){
+				Bind.click.path.call(path,me);
+			});
+			Bind.drag(outerPath,me);
+			Configure.$(outerPath).rightClick(function(){
+				alert("double");
 			});
 		}
 	}).extend("circle",{
@@ -257,7 +340,7 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			circle.attr({stroke : attrParams._stroke,fill : attrParams.bgColor || attrParams._fill,cursor : cursor})
 				.data("belong",{id : attrParams.id,position : attrParams.position})
 				.toFront();
-			Bind.drag(circle);
+			Bind.drag(circle,this);
 		},
 		pathCircle : function(circle){
 			Configure.$(circle).rightClick(function(){
@@ -278,15 +361,25 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			}
 			return arr;
 		}
+		function common(el,attrParams,rightClickFunc){
+			var points = attrParams.points;
+			points && el.data("connectPoints",typeof points == 'object' 
+				? points : getPoints(points));
+			Bind.drag(el,this);
+			Configure.$(el).rightClick(rightClickFunc);
+		}
 		Configure.extend("connector",{
 			afterInit : function(connector,attrParams){
-				var points = attrParams.points;
-				connector.data("connectPoints",typeof points == 'object' 
-					? points : getPoints(points));
-				Bind.drag(connector);
-				Configure.$(connector).rightClick(function(){
+				common.call(this,connector,attrParams,function(){
 					alert("connector");
 				});
+			}
+		}).extend("device",{
+			afterInit : function(device,attrParams){
+				common.call(this,device,attrParams,function(){
+					alert("device");
+				});
+				Bind.click(device,this);
 			}
 		});
 	})();

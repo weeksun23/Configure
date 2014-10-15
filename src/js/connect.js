@@ -114,13 +114,6 @@ define(function(){
 					width : newW,
 					height : newH
 				});
-				var stuff = target.data("leaf") || target.data("fire");
-				if(stuff){
-					stuff.attr({
-						width : newW * stuff.data("wFactor"),
-						height : newH * stuff.data("hFactor")
-					});
-				}
 				moveImgEl(paper,target,targetX,targetY,null,true);
 				break;
 			case "path": 
@@ -135,8 +128,9 @@ define(function(){
 				}
 				var str = pathArr.toString();
 				target.attr("path",str);
-				if(target.data("type") === "dottedPipe-main"){
-					target.data("other").attr("path",str);
+				var other = target.data("other");
+				if(other){
+					other.attr("path",str);
 				}
 				break;
 		}
