@@ -1,12 +1,17 @@
-define(["./configure","./connect"],function(Configure,ConnInit){
+define(["./configure","./connect"],function(Configure,Connection){
 	"use strict";
-	var Connect = ConnInit(Configure);
 	var Bind = Configure.bind;
 	Configure.mix(Configure.prototype,{
-		//当前选中的path
-		curPath : null,
-		//存放所有选择的img元素
-		clickEl : [],
+		init : function(){
+			//编辑模式
+			this.edit = true;
+			//当前选中的path
+			this.curPath = null;
+			//存放所有选择的img元素
+			this.clickEl = [];
+			//连接类实例
+			this.connect = new Connection(this);
+		},
 		//清空所有或特定选择的元素
 		clearChoose : function(target){
 			var clickEl = this.clickEl;
@@ -26,94 +31,94 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			clickEl.length = 0;
 		}
 	});
-	//编辑模式
-	Configure.edit = true;
+
 	(function(){
-		function edage(x,y,bbox){
-			var maxX = Configure.paperW;
-			var maxY = Configure.paperH;
+		function edage(x,y,w,h,configure){
+			var maxX = configure.paperW;
+			var maxY = configure.paperH;
 			//不能滑出边缘
 			if(x < 0){
 				x = 0;
-			}else if(x + bbox.width > maxX){
-				x = maxX - bbox.width;
+			}else if(x + w > maxX){
+				x = maxX - w;
 			}
 			if(y < 0){
 				y = 0;
-			}else if(y + bbox.height > maxY){
-				y = maxY - bbox.height;
+			}else if(y + h > maxY){
+				y = maxY - h;
 			}
 			return {
 				x : x,
 				y : y
 			};
 		}
+		function pathDragging(configure,dx,dy){
+			var arr = Raphael.parsePathString(this.sPath);
+			var posArr = [];
+			for(var i=0,ii=arr.length;i<ii;i++){
+				var item = arr[i];
+				item[1] += dx;
+				item[2] += dy;
+				if(i === 0 || i === ii - 1){
+					posArr.push([item[1],item[2]]);
+				}
+			}
+			var str = arr.toString();
+			this.attr("path",str).noSel = true;
+			var target = this;
+			var other = this.data("other");
+			if(other){
+				//平移带虚线的管道时 必须同时 移动另一条路径
+				other.attr("path",str);
+				if(!this.data("main")){
+					//同时移动虚线管道两端的连线圆
+					target = other;
+				}
+			}
+			var set = target.data("circleSet");
+			if(set){
+				set.move(posArr,function(circle,x,y){
+					//configure.connect.moveCircle(circle.id,x,y);
+				});
+			}
+		}
+		function pathStartDrag(){
+			this.sPath = this.attr("path");
+			this.noSel = false;
+		}
+		function pathEndDrag(){
+			this.sPath = null;
+			var me = this;
+			setTimeout(function(){
+				//让选中元素的事件方法先触发
+				me.noSel = false;
+			});
+		}
 		var dragFunc = {
-			path : function(configure){
-				var paper = configure.paper;
+			path : function(configure,target){
+				target = target || this;
 				this.drag(function(dx,dy){
-					var arr = Configure.raphael.parsePathString(this.sPath);
-					var posArr = [];
-					for(var i=0,ii=arr.length;i<ii;i++){
-						var item = arr[i];
-						item[1] += dx;
-						item[2] += dy;
-						if(i === 0 || i === ii - 1){
-							posArr.push([item[1],item[2]]);
-						}
-					}
-					var str = arr.toString();
-					this.attr("path",str).noSel = true;
-					var target = this;
-					var other = this.data("other");
-					if(other){
-						//平移带虚线的管道时 必须同时 移动另一条路径
-						other.attr("path",str);
-						if(!this.data("main")){
-							//同时移动虚线管道两端的连线圆
-							target = other;
-						}
-					}
-					var set = target.data("circleSet");
-					if(set){
-						set.move(posArr,function(circle,x,y){
-							Connect.moveCircle(paper,circle.id,x,y);
-						});
-					}
+					pathDragging.call(target,configure,dx,dy);
 				},function(){
-					this.sPath = this.attr("path");
-					this.noSel = false;
+					pathStartDrag.call(target);
 				},function(){
-					this.sPath = null;
-					var me = this;
-					setTimeout(function(){
-						//让选中元素的事件方法先触发
-						me.noSel = false;
-					});
+					pathEndDrag.call(target);
 				});
 			},
 			image : function(configure){
-				var paper = configure.paper;
 				this.drag(function(dx,dy){
-					var type = this.data("type"),
-						x = this.sX + dx,
-						y = this.sY + dy;
-					var bbox = this.getBBox();
 					//不能滑出边缘
-					var obj = edage(x,y,bbox);
-					x = obj.x;
-					y = obj.y;
-					if(type === 'device' || type === 'heatdevice' || type === 'connector'){
-						Connect.moveImgEl(paper,this,x,y);
-					}
+					var bbox = this.getBBox();
+					var obj = edage(this.sX + dx,this.sY + dy,this.attr("width"),this.attr("height"),configure);
+					dx = obj.x - this.sX;
+					dy = obj.y - this.sY;
+					configure.connect.move(this,dx,dy);
 					this.noSel = true;
 				},function(){
-					this.sX = this.attr("x");
-					this.sY = this.attr("y");
+					configure.connect.beforeMove(this);
 					this.noSel = false;
 				},function(){
-					this.sX = null;
-					this.sY = null;
+					configure.connect.afterMove(this);
 					var me = this;
 					setTimeout(function(){
 						//setTimeout让选中元素的事件方法先触发
@@ -124,7 +129,7 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 						//drop下连接器
 						//先查看还有连接点可以连接否
 						var points = this.data("connectPoints");
-						var canConnect = Connect.getCanConnectPoints(this);
+						var canConnect = configure.connect.getCanConnectPoints(this);
 						if(canConnect.length === 0){
 							return;
 						}
@@ -133,58 +138,52 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 						var x = me.attr("x") + me.attr("width") / 2;
 						var y = me.attr("y") + me.attr("height") / 2;
 						//是否 drop在设备上
-						paper.forEach(function(el){
+						configure.paper.forEach(function(el){
 							if(el.type === 'image'){
 								var type = el.data("type");
-								if(type === "device" || type === "heatdevice"){
+								if(type === "device"){
 									var bbox = el.getBBox();
-									if(Configure.raphael.isPointInsideBBox(bbox, x, y)){
+									if(Raphael.isPointInsideBBox(bbox, x, y)){
 										//开始连接
-										Connect.connectorToDevice(this,me,el,bbox,x,y,canConnect);
+										configure.connect.connectorToDevice(me,el,bbox,x,y,canConnect);
 										return false;
 									}
 								}
 							}
-						},paper);
+						});
 					}
 				});
 			},
 			circle : function(configure){
-				var paper = configure.paper;
 				this.drag(function(dx,dy){
-					var x = this.sX + dx,
-						y = this.sY + dy;
-					Connect.moveCirclePos(paper,this,x,y);
-					Connect.moveCircle(paper,this.id,x,y);
+					configure.connect.imgCircleMove(this,dx,dy);
 				},function(){
-					this.sX = this.toFront().attr("cx");
-					this.sY = this.attr("cy");
+					configure.connect.beforeImgCircleMove(this.toFront());
 				},function(e){
-					this.sX = null;
-					this.sY = null;
+					configure.connect.afterImgCircleMove(this);
 					//如果drop下的是路径两端的连线圆
 					if(this.data("typeVal") === 'pathCircle'){
-						if(!this.data("connect")){
+						if(!configure.connect.isConnect(this.id)){
 							var x = this.attr("cx");
 							var y = this.attr("cy");
 							var me = this;
-							paper.forEach(function(el){
+							configure.paper.forEach(function(el){
 								var type = el.data("type");
-								if(type === "connector" || type === 'device' || type === 'heatdevice'){
+								if(type === "connector" || type === 'device'){
 									var bbox = el.getBBox();
-									if(Configure.raphael.isPointInsideBBox(bbox,x,y)){
-										Connect.pathToConnector(this,me,el,bbox,x,y);
+									if(Raphael.isPointInsideBBox(bbox,x,y)){
+										configure.connect.pathToConnector(me,el,bbox,x,y);
 										return false;
 									}
 								}
-							},paper);
+							});
 						}
 					}
 				});
 			}
 		};
-		Bind.drag = function(el,configure){
-			dragFunc[el.type].call(el,configure);
+		Bind.drag = function(el,configure,target){
+			dragFunc[el.type].call(el,configure,target);
 			return Bind;
 		};
 	})();
@@ -204,7 +203,7 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			}
 			return re;
 		}
-		function clickPath(configure){
+		function pathClick(configure){
 			var paper = configure.paper;
 			if(this.noSel) return;
 			var re = isSelected(this);
@@ -236,9 +235,9 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			}
 		}
 		var clickFunc = {
-			path : function(configure){
+			path : function(configure,target){
 				this.click(function(){
-					clickPath.call(this,configure);
+					pathClick.call(target || this,configure);
 				});
 			},
 			image : function(configure){
@@ -281,11 +280,10 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 				});
 			}
 		};
-		Bind.click = function(el,configure){
-			clickFunc[el.type].call(el,configure);
+		Bind.click = function(el,configure,target){
+			clickFunc[el.type].call(el,configure,target);
 			return Bind;
 		};
-		Bind.click.path = clickPath;
 	})();
 	Configure.extend("line",{
 		beforeInit : function(initParams,attrParams){
@@ -309,12 +307,10 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 			var outerPath = this.paper.path(path.attr("path")).attr(attrParams._outerAttr);
 			outerPath.toFront().data("other",path);
 			path.toFront().data("other",outerPath).data("main",true);
-			var me = this;
 			//点击outerPath时触发path的点击事件
-			outerPath.click(function(){
-				Bind.click.path.call(path,me);
-			});
-			Bind.drag(outerPath,me);
+			Bind.click(outerPath,this,path)
+			//drag outerPath时触发path的drag事件
+				.drag(outerPath,this,path);
 			Configure.$(outerPath).rightClick(function(){
 				alert("double");
 			});
@@ -384,25 +380,23 @@ define(["./configure","./connect"],function(Configure,ConnInit){
 		});
 	})();
 	//扩展set
-	(function(Raphael){
-		Raphael.st.method = function(method){
-			var oArg = arguments;
-			this.forEach(function(el){
-				el[method].apply(el,Array.prototype.splice.call(oArg,1));
+	Raphael.st.method = function(method){
+		var oArg = arguments;
+		this.forEach(function(el){
+			el[method].apply(el,Array.prototype.splice.call(oArg,1));
+		});
+	};
+	//设置set中每一个元素的cx cy坐标
+	Raphael.st.move = function(posArr,func){
+		var i = 0;
+		this.forEach(function (el) {
+			var item = posArr[i++];
+			item && el.attr({
+				cx : item[0],
+				cy : item[1]
 			});
-		};
-		//设置set中每一个元素的cx cy坐标
-		Raphael.st.move = function(posArr,func){
-			var i = 0;
-			this.forEach(function (el) {
-				var item = posArr[i++];
-				item && el.attr({
-					cx : item[0],
-					cy : item[1]
-				});
-				func && func(el,item[0],item[1]);
-		    });
-		};
-	})(Configure.raphael);
+			func && func(el,item[0],item[1]);
+	    });
+	};
 	return Configure;
 });

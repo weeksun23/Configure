@@ -3,11 +3,11 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 	/********************************paper**************************************/
 	function Configure(paperId,w,h){
 		this.paper = new Raphael(paperId,this.paperW = (w || 7500),this.paperH = (h || 7500));
+		this.init && this.init();
 	}
 	Configure.prototype.add = function(type,typeVal,initParams,attrParams){
 		return core[type].call(this,typeVal,initParams,attrParams);
 	};
-	Configure.raphael = Raphael;
 	Configure.version = "1.0";
 	/********************************帮助函数**************************************/
 	//空函数
@@ -56,7 +56,7 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 	var core = Configure.core = {};
 	/*
 	扩展core
-	每个属性都是一个方法，this指向当前configure实例,执行顺序为beforeInit > init > [typeVal]init > afterInit
+	每个属性都是一个方法，this指向当前configure实例,执行顺序为beforeInit > init > afterInit > [typeVal]
 	beforeInit主要对传入参数进行处理若返回值为数组，则作为init的参数
 	init接收Raphael对象初始化所需参数，并进行初始化，返回Raphael对象
 		Paper.path([pathString])
