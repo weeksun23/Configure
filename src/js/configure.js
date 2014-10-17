@@ -9,6 +9,11 @@ define(['./lib/raphael/raphael-cmd-min'],function(Raphael){
 		return core[type].call(this,typeVal,initParams,attrParams);
 	};
 	Configure.version = "1.0";
+	Configure.log = function(){
+		try{
+			window.console && console.log.apply(console,arguments);
+		}catch(e){}
+	};
 	/********************************帮助函数**************************************/
 	//空函数
 	var noop = Configure.noop = function(){};
