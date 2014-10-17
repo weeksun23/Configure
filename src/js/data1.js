@@ -1,0 +1,3 @@
+define(function(){
+	return '{"connector":[{"x":301,"y":141,"width":32,"height":33,"src":"left-top","tempId":0}],"device":[{"x":211,"y":288,"width":106,"height":70,"src":"change","tempId":1}],"line":[{"typeVal":"double","path":"M301,165.75L264,288","attr":{"stroke":"blue","stroke-width":5,"stroke-dasharray":"-"},"tempId":2,"circles":[{"cx":301,"cy":165.75,"tempId":4,"position":0},{"cx":264,"cy":288,"tempId":5,"position":1}],"outerAttr":{"stroke":"#d2d2d2","stroke-width":15}}],"relation":{"0":[{"id":4,"position":{"x":0,"y":0.75}}],"1":[{"id":5,"position":{"x":0.5,"y":0}}],"4":[{"id":0,"position":{"x":0,"y":0.75}}],"5":[{"id":1,"position":{"x":0.5,"y":0}}]}}';
+});

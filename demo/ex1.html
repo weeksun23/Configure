@@ -14,7 +14,7 @@
                 <div class='fl item' ms-repeat-img="el.data" 
                     ms-mousedown="$beforeMove($event,img)"
                     data-repeat-rendered='$rendered' ms-data-img='img'>
-                    <img ms-if='img.src' ms-src='../src/imglib/{{img.src}}' 
+                    <img ms-if='img.src' ms-src='{{path}}{{img.src}}' 
                         ms-css-width='img.width' ms-css-height='img.height' 
                         ms-data-type-val='img.typeVal'/>
                 </div>
@@ -22,6 +22,7 @@
         </div>
         <div class='mgt5 tac'>
             <button ms-click="$saveData()">保存数据</button>
+            <button ms-click="$loadData()">加载数据</button>
         </div>
     </div>
     <div class='center'>
@@ -29,7 +30,7 @@
     </div>
     <div class='proxy' ms-visible='proxy.show' ms-css-left='proxy.left' 
         ms-css-top='proxy.top' ms-css-cursor="proxy.cursor">
-        <img ms-if='proxy.src' ms-src='../src/imglib/{{proxy.src}}' 
+        <img ms-if='proxy.src' ms-src='{{path}}{{proxy.src}}' 
             ms-css-width='proxy.width' ms-css-height='proxy.height' 
             ms-data-type-val='proxy.typeVal'/>
     </div>
@@ -43,9 +44,12 @@
                 typeVal : null
             };
         }
-        require(["../../configure.imglib.js","../../configure.edit"],function(Imglib,Configure){
+        require(["../../configure.edit","../../data1"],function(Configure,configureData){
+            Configure.init("../src/imglib/");
+            var imgLib = Configure.imgLib;
             var configure = new Configure("paper");
             var vmodel = avalon.define("configure",function(vm){
+                vm.path = Configure.path;
                 vm.panelData = [{
                     title : "连线",
                     type : "line",
@@ -76,7 +80,7 @@
                 vm.$rendered = function(action,i,arr){
                     if(action === 'add'){
                         avalon.each(arr,function(i,img){
-                            var target = Imglib[img.$name];
+                            var target = imgLib[img.$name];
                             img.src = target.src;
                             img.width = target.w;
                             img.height = target.h;
@@ -118,7 +122,7 @@
                             if(type === "line"){
                                 configure.add(type,img.typeVal,[proxy.left - panelW,proxy.top]);
                             }else if(type === "connector" || type === "device"){
-                                configure.add(type,img.typeVal,["../src/imglib/" + proxy.src,
+                                configure.add(type,img.typeVal,[Configure.path + proxy.src,
                                     proxy.left - panelW,proxy.top,proxy.width,proxy.height],{
                                         points : img.$points
                                     });
@@ -130,7 +134,10 @@
                     });
                 };
                 vm.$saveData = function(){
-                    
+                    configure.saveData();
+                };
+                vm.$loadData = function(){
+                    configure.loadData(configureData);
                 };
             });
             avalon.scan();
