@@ -20,6 +20,9 @@
                 </div>
             </div>
         </div>
+        <div class='mgt5 tac'>
+            <button ms-click="$saveData()">保存数据</button>
+        </div>
     </div>
     <div class='center'>
         <div id='paper'></div>
@@ -50,7 +53,7 @@
                 },{
                     title : "连接器",
                     type : "connector",
-                    data : [getItem("left-bottom"),getItem("left-right"),getItem("left-top")]
+                    data : [getItem("left-bottom"),getItem("left-right"),getItem("left-top"),getItem("top-bottom")]
                 },{
                     title : "设备",
                     type : "device",
@@ -125,6 +128,9 @@
                         avalon.unbind(document,"mouseup",up);
                         avalon.unbind(document,"mousemove",move);
                     });
+                };
+                vm.$saveData = function(){
+                    
                 };
             });
             avalon.scan();

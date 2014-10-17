@@ -14,7 +14,7 @@ define(function(){
 		*/
 		this.relation = {};
 	}
-	var fn = Connection.prototype = {
+	Connection.prototype = {
 		set : function(){
 			var relation = this.relation;
 			for(var i=0,ii=arguments.length;i<ii;i = i + 2){
@@ -68,40 +68,62 @@ define(function(){
 		connectorToDevice : connectorToDevice,
 		getCanConnectPoints : getCanConnectPoints,
 		pathToConnector : pathToConnector,
-		beforeImgCircleMove : function(circle){
+		beforeCircleMove : function(circle){
 			var typeVal = circle.data("typeVal");
 			var item = circle.data("belong");
 			var paper = this.configure.paper;
 			var target = paper.getById(item.id);
+			var relation = this.relation;
 			if(typeVal === "imgCircle"){
 				var bbox = target.getBBox();
-				var relation = this.relation;
 				var imgId = target.id;
 				var conArr = relation[imgId];
 				var result = [];
-				for(var j=0,jj;jj=conArr[j++];){
-					var obj = {};
-					var pos = jj.position;
-					obj.x = bbox.x + (obj._x = pos.x) * bbox.width;
-					obj.y = bbox.y + (obj._y = pos.y) * bbox.height;
-					var el = paper.getById(jj.id);
-					var els = [el];
-					getConnectedEls(paper,relation,el,els,imgId);
-					obj.els = els;
-					setStartXStartY(els);
-					result.push(obj);
+				if(conArr){
+					for(var j=0,jj;jj=conArr[j++];){
+						var obj = {};
+						var pos = jj.position;
+						obj.x = bbox.x + (obj._x = pos.x) * bbox.width;
+						obj.y = bbox.y + (obj._y = pos.y) * bbox.height;
+						var el = paper.getById(jj.id);
+						var els = [el];
+						getConnectedEls(paper,relation,el,els,imgId);
+						obj.els = els;
+						setStartXStartY(els);
+						result.push(obj);
+					}
 				}
-				circle.connectedArr = result;
+				
+			}else if(typeVal === "pathCircle"){
+				var circleId = circle.id;
+				var result = [];
+				var conArr = relation[circleId];
+				if(conArr){
+					//pathCircle最多只能连接一个组件 所以conArr的length最大为1
+					for(var j=0,jj;jj=conArr[j++];){
+						var obj = {};
+						var el = paper.getById(jj.id);
+						var els = [el];
+						getConnectedEls(paper,relation,el,els,circleId);
+						setStartXStartY(els);
+						obj.els = els;
+						result.push(obj);
+					}
+				}
 			}
+			circle.connectedArr = result;
 			circle.sX = circle.attr("cx");
 			circle.sY = circle.attr("cy");
 			circle.target = target;
 			circle.position = item.position;
 		},
-		imgCircleMove : function(circle,dx,dy){
+		//unChangePath为true 不改变路径与circle,否则改变
+		circleMove : function(circle,dx,dy,unChangePath){
 			var typeVal = circle.data("typeVal");
-			var cx = circle.sX + dx;
-			var cy = circle.sY + dy;
+			if(!unChangePath){
+				var cx = circle.sX + dx;
+				var cy = circle.sY + dy;
+			}
 			var paper = this.configure.paper;
 			if(typeVal === "imgCircle"){
 				var result = changeImgByCircle(circle,cx,cy);
@@ -109,22 +131,49 @@ define(function(){
 				for(var i=0,ii;ii = connectedArr[i++];){
 					var dx = result.x + result.w * ii._x - ii.x;
 					var dy = result.y + result.h * ii._y - ii.y;
+					if(dx === 0 && dy === 0){
+						continue;
+					}
 					setXY(paper,ii.els,dx,dy);
 				}
 			}else if(typeVal === "pathCircle"){
-				changePathByCircle(circle,cx,cy);
+				!unChangePath && changePathByCircle(circle,cx,cy);
+				var connectedArr = circle.connectedArr || [];
+				for(var i=0,ii;ii = connectedArr[i++];){
+					setXY(paper,ii.els,dx,dy);
+				}
 			}
 		},
-		afterImgCircleMove : function(circle){
+		afterCircleMove : function(circle){
 			circle.connectedArr = null;
 			circle.target = null;
+		},
+		beforeMove : function(el){
+			var els = [el];
+			getConnectedEls(this.configure.paper,this.relation,el,els);
+			el.connectedEls = els;
+			setStartXStartY(els);
+		},
+		move : function(el,dx,dy){
+			setXY(this.configure.paper,el.connectedEls,dx,dy);
+		},
+		afterMove : function(el){
+			el.connectedEls = null;
+		},
+		setImgPosition : function(el,x,y){
+			var dx = x - el.attr("x");
+			var dy = y - el.attr("y");
+			this.beforeMove(el);
+			this.move(el,dx,dy);
+			this.afterMove(el);
 		}
 	};
-	function setCircle(paper,circle){
+	function setCircleTarget(paper,circle){
 		var item = circle.data("belong");
 		circle.target = paper.getById(item.id);
 		circle.position = item.position;
 	}
+	//通过circle改变img的size和position
 	function changeImgByCircle(circle,cx,cy){
 		var target = circle.target;
 		var position = circle.position;
@@ -156,15 +205,22 @@ define(function(){
 		var targetY = (is0 || is1) ? cy : (cy - newH);
 		target.attr({
 			width : newW,
-			height : newH
+			height : newH,
+			x : targetX,
+			y : targetY
 		});
-		return{
+		circle.attr({
+			cx : cx,
+			cy : cy
+		});
+		return {
 			w : newW,
 			h : newH,
 			x : targetX,
 			y : targetY
-		}
+		};
 	}
+	//通过circle改变路径
 	function changePathByCircle(circle,cx,cy){
 		var position = circle.position;
 		var target = circle.target;
@@ -178,11 +234,14 @@ define(function(){
 			}
 		}
 		var str = pathArr.toString();
-		target.attr("path",str);
-		var other = target.data("other");
+		var other = target.attr("path",str).data("other");
 		if(other){
 			other.attr("path",str);
 		}
+		circle.attr({
+			cx : cx,
+			cy : cy
+		});
 	}
 	//递归获取el的所有连接组件 结果存放在els数组中
 	function getConnectedEls(paper,relation,el,els,excludeId){
@@ -237,30 +296,11 @@ define(function(){
 					});
 				}
 			}else if(type === "circle"){
-				setCircle(paper,circle);
+				setCircleTarget(paper,item);
 				changePathByCircle(item,item.sX + dx,item.sY + dy);
 			}
 		}
 	}
-	fn.beforeMove = function(el){
-		var els = [el];
-		getConnectedEls(this.configure.paper,this.relation,el,els);
-		el.connectedEls = els;
-		setStartXStartY(els);
-	};
-	fn.move = function(el,dx,dy){
-		setXY(this.configure.paper,el.connectedEls,dx,dy);
-	};
-	fn.afterMove = function(el){
-		el.connectedEls = null;
-	};
-	fn.setImgPosition = function(el,x,y){
-		var dx = x - el.attr("x");
-		var dy = y - el.attr("y");
-		this.beforeMove(el);
-		this.move(el,dx,dy);
-		this.afterMove(el);
-	};
 	//获取两点距离
 	function getPointDistance(p1,p2){
 		return Math.sqrt(Math.pow(p2.x - p1.x,2) + Math.pow(p2.y - p1.y,2));
@@ -364,7 +404,7 @@ define(function(){
 			//连接
 			var tx = arr[index].x,
 				ty = arr[index].y;
-			setCircle(paper,circle);
+			setCircleTarget(paper,circle);
 			changePathByCircle(circle,tx,ty);
 			connectEffect(paper,tx,ty);
 			//建立连接关系

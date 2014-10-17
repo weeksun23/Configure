@@ -29,6 +29,9 @@ define(["./configure","./connect"],function(Configure,Connection){
 				}
 			}
 			clickEl.length = 0;
+		},
+		saveData : function(){
+			
 		}
 	});
 
@@ -77,17 +80,41 @@ define(["./configure","./connect"],function(Configure,Connection){
 			}
 			var set = target.data("circleSet");
 			if(set){
-				set.move(posArr,function(circle,x,y){
-					//configure.connect.moveCircle(circle.id,x,y);
+				set.move(posArr,function(circle){
+					configure.connect.circleMove(circle,dx,dy,true);
 				});
 			}
 		}
-		function pathStartDrag(){
+		function pathStartDrag(configure){
 			this.sPath = this.attr("path");
 			this.noSel = false;
+			var set = this.data("circleSet");
+			if(set){
+				for(var i=0,circle;circle=set[i];i++){
+					configure.connect.beforeCircleMove(circle);
+					if(i === 0){
+						var els = circle.connectedArr[0].els;
+						var target = set[1];
+						for(var j=0,el;el=els[j++];){
+							if(el.id === target.id){
+								//如果第一个circle所关联的组件包含了另一端的circle 
+								//则说明连接的组件闭合形成循环 
+								//另一端就不用再获取关联组件了
+								return;
+							}
+						}
+					}
+				}
+			}
 		}
-		function pathEndDrag(){
+		function pathEndDrag(configure){
 			this.sPath = null;
+			var set = this.data("circleSet");
+			if(set){
+				set.forEach(function(circle){
+					configure.connect.afterCircleMove(circle);
+				});
+			}
 			var me = this;
 			setTimeout(function(){
 				//让选中元素的事件方法先触发
@@ -100,9 +127,9 @@ define(["./configure","./connect"],function(Configure,Connection){
 				this.drag(function(dx,dy){
 					pathDragging.call(target,configure,dx,dy);
 				},function(){
-					pathStartDrag.call(target);
+					pathStartDrag.call(target,configure);
 				},function(){
-					pathEndDrag.call(target);
+					pathEndDrag.call(target,configure);
 				});
 			},
 			image : function(configure){
@@ -156,11 +183,11 @@ define(["./configure","./connect"],function(Configure,Connection){
 			},
 			circle : function(configure){
 				this.drag(function(dx,dy){
-					configure.connect.imgCircleMove(this,dx,dy);
+					configure.connect.circleMove(this,dx,dy);
 				},function(){
-					configure.connect.beforeImgCircleMove(this.toFront());
+					configure.connect.beforeCircleMove(this.toFront());
 				},function(e){
-					configure.connect.afterImgCircleMove(this);
+					configure.connect.afterCircleMove(this);
 					//如果drop下的是路径两端的连线圆
 					if(this.data("typeVal") === 'pathCircle'){
 						if(!configure.connect.isConnect(this.id)){
