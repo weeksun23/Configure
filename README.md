@@ -1,4 +1,3 @@
 Configure
 =========
-
-configure by raphaeljs
+组态矢量图小实验，基于Raphaeljs，可自由拖放添加路径、组件，并能将路径与组件连接，可自定义组件的连接点
