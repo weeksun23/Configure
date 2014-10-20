@@ -29,28 +29,58 @@ define(["./configure","./connect"],function(Configure,Connection){
 				}
 			}
 			clickEl.length = 0;
+		},
+		//保存数据
+		saveData : function(){
+			var paper = this.paper;
+			var obj = {};
+			paper.forEach(function(el){
+				var type = el.data("type");
+				if(type){
+					var result = Configure.core[type].toData(el,this);
+					if(result){
+						var arr = obj[type];
+						if(!arr){
+							arr = obj[type] = [];
+						}
+						arr.push(result);
+					}
+				}
+			},this);
+			obj.relation = this.connect.relation;
+			return JSON.stringify(obj);
 		}
 	});
-	/***************************保存数据***************************/
-	Configure.prototype.saveData = function(){
-		var paper = this.paper;
-		var obj = {};
-		paper.forEach(function(el){
-			var type = el.data("type");
-			if(type){
-				var result = Configure.core[type].toData(el,this);
-				if(result){
-					var arr = obj[type];
-					if(!arr){
-						arr = obj[type] = [];
+	(function(){
+		function getElIdByTempId(paper,tempId){
+			var result;
+			paper.forEach(function(el){
+				if(tempId === el.data("tempId")){
+					result = el.id;
+					return false;
+				}
+			});
+			return result;
+		}
+		Configure.prototype.restoreRelation = function(relation){
+			var newRelation = this.connect.relation = {};
+			var paper = this.paper;
+			for(var i in relation){
+				var connArr = relation[i];
+				if(connArr && connArr.length > 0){
+					var newConnArr = [];
+					for(var j=0,jj;jj=connArr[j++];){
+						newConnArr.push({
+							id : getElIdByTempId(paper,jj.id),
+							position : jj.position
+						});
 					}
-					arr.push(result);
+					newRelation[getElIdByTempId(paper,Number(i))] = newConnArr;
 				}
 			}
-		},this);
-		obj.relation = this.connect.relation;
-		Configure.log(JSON.stringify(obj));
-	};
+			Configure.log(newRelation);
+		};
+	})();
 	/***************************静态绑定***************************/
 	(function(){
 		function edage(x,y,w,h,configure){
@@ -276,7 +306,7 @@ define(["./configure","./connect"],function(Configure,Connection){
 					);
 					this.data("circleSet",newSet);
 				}else{
-					set.method("show");
+					set.method("show").method("toFront");
 				}
 				configure.curPath = this;
 			}
@@ -438,7 +468,7 @@ define(["./configure","./connect"],function(Configure,Connection){
 							id : el.id,
 							position : item.position
 						});
-						set.push(circle.data("tempId",item.tempId));
+						set.push(circle.data("tempId",item.tempId).hide());
 					}
 					el.data("circleSet",set);
 					el.data("tempId",obj.tempId);
@@ -531,14 +561,14 @@ define(["./configure","./connect"],function(Configure,Connection){
 	//扩展set
 	Raphael.st.method = function(method){
 		var oArg = arguments;
-		this.forEach(function(el){
+		return this.forEach(function(el){
 			el[method].apply(el,Array.prototype.splice.call(oArg,1));
 		});
 	};
 	//设置set中每一个元素的cx cy坐标
 	Raphael.st.move = function(posArr,func){
 		var i = 0;
-		this.forEach(function (el) {
+		return this.forEach(function (el) {
 			var item = posArr[i++];
 			item && el.attr({
 				cx : item[0],

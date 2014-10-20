@@ -8,19 +8,6 @@ define(['./lib/raphael/raphael-cmd-min','./configure.imglib'],function(Raphael,i
 	Configure.prototype.add = function(type,typeVal,initParams,attrParams){
 		return core[type].call(this,typeVal,initParams,attrParams);
 	};
-	Configure.prototype.loadData = function(data){
-		data = JSON.parse(data);
-		this.paper.clear();
-		this.edit && (this.connect.relation = {});
-		for(var i in data){
-			if(i !== "relation"){
-				var item = data[i];
-				for(var j=0,obj;obj=item[j++];){
-					core[i].toEl(obj,this);
-				}
-			}
-		}
-	};
 	Configure.version = "1.0";
 	Configure.init = function(path){
 		Configure.path = path;
@@ -33,6 +20,21 @@ define(['./lib/raphael/raphael-cmd-min','./configure.imglib'],function(Raphael,i
 		try{
 			window.console && console.log.apply(console,arguments);
 		}catch(e){}
+	};
+	Configure.prototype.loadData = function(data){
+		data = JSON.parse(data);
+		this.paper.clear();
+		for(var i in data){
+			if(i !== "relation"){
+				var item = data[i];
+				for(var j=0,obj;obj=item[j++];){
+					core[i].toEl(obj,this);
+				}
+			}
+		}
+		if(this.edit){
+			this.restoreRelation(data.relation);
+		}
 	};
 	/********************************帮助函数**************************************/
 	//空函数

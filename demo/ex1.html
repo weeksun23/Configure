@@ -11,22 +11,26 @@
         <div ms-repeat="panelData">
             <div class='panel-title' ms-click="$selPanel($index)">{{el.title}}</div>
             <div class='panel-content clearfix' ms-data-type='el.type' ms-visible='curIndex === $index'>
-                <div class='fl item' ms-repeat-img="el.data" 
+                <span class='item' ms-repeat-img="el.data" 
                     ms-mousedown="$beforeMove($event,img)"
                     data-repeat-rendered='$rendered' ms-data-img='img'>
                     <img ms-if='img.src' ms-src='{{path}}{{img.src}}' 
                         ms-css-width='img.width' ms-css-height='img.height' 
                         ms-data-type-val='img.typeVal'/>
-                </div>
+                </span>
             </div>
-        </div>
-        <div class='mgt5 tac'>
-            <button ms-click="$saveData()">保存数据</button>
-            <button ms-click="$loadData()">加载数据</button>
         </div>
     </div>
     <div class='center'>
         <div id='paper'></div>
+    </div>
+    <div class='east'>
+        <a class='forkme' href='https://github.com/weeksun23/Configure'></a>
+        <div class='mgt5 tac'>
+            <button ms-click="$saveData()">保存数据</button>
+            <button ms-click="$loadData()">加载数据</button>
+            <textarea class='data-area' ms-value='dataStr'></textarea>
+        </div>
     </div>
     <div class='proxy' ms-visible='proxy.show' ms-css-left='proxy.left' 
         ms-css-top='proxy.top' ms-css-cursor="proxy.cursor">
@@ -44,24 +48,33 @@
                 typeVal : null
             };
         }
+        function getItemList(str){
+            var arr = str.split(",");
+            var result = [];
+            for(var i=0,ii;ii=arr[i++];){
+                result.push(getItem(ii));
+            }
+            return result;
+        }
         require(["../../configure.edit","../../data1"],function(Configure,configureData){
             Configure.init("../src/imglib/");
             var imgLib = Configure.imgLib;
             var configure = new Configure("paper");
             var vmodel = avalon.define("configure",function(vm){
+                vm.dataStr = '';
                 vm.path = Configure.path;
                 vm.panelData = [{
                     title : "连线",
                     type : "line",
-                    data : [getItem("double"),getItem("dotted"),getItem("solid")]
+                    data : getItemList("double,dotted,solid")
                 },{
                     title : "连接器",
                     type : "connector",
-                    data : [getItem("left-bottom"),getItem("left-right"),getItem("left-top"),getItem("top-bottom")]
+                    data : getItemList('left-bottom,left-right,left-top,right-bottom,right-top,top-bottom,blue-bottom,blue-left,blue-right,blue-top,red-bottom,red-left,red-right,red-top,pipe-left-right-top,pipe-top-left-bottom,pipe-left-right-bottom,pipe-bottom-right-top,control-left-right,control-left-right2')
                 },{
                     title : "设备",
                     type : "device",
-                    data : [getItem("plc"),getItem("climate"),getItem("change")]
+                    data : getItemList("plc,climate,change")
                 }];
                 vm.curIndex = 0;
                 vm.proxy = {
@@ -134,7 +147,8 @@
                     });
                 };
                 vm.$saveData = function(){
-                    configure.saveData();
+                    var data = configure.saveData();
+                    vm.dataStr = data;
                 };
                 vm.$loadData = function(){
                     configure.loadData(configureData);
